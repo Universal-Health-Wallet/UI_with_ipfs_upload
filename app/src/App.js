@@ -29,8 +29,12 @@ import { Button,Col,Row, Form } from 'react-bootstrap';
 import { useSnackbar } from "notistack";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ToastContainer, toast } from 'react-toastify';    
-require('@solana/wallet-adapter-react-ui/styles.css');
-// import * from "@solana/spl-token";
+import { create } from 'ipfs-http-client';
+import { Token } from "@solana/spl-token";
+// require('@solana/wallet-adapter-react-ui/styles.css');
+
+/* Create an instance of the client */
+const client = create('https://ipfs.infura.io:5001/api/v0')
 
 const wallets = [
   /* view list of available wallets at https://github.com/solana-labs/wallet-adapter#wallets */
@@ -55,6 +59,7 @@ function App() {
   const [value, setValue] = useState({
     tweets: [],
     twitterUsers: [],
+    fileUrl: ''
   });
   const wallet = useWallet();
   let twitterUsers = [];
@@ -195,6 +200,9 @@ function App() {
       );
       let gc_fee_bn = new anchor.BN(500);
       let time = new anchor.BN(Date.now() / 1000);
+      console.log(gc_fee_bn.toString());
+      console.log(time.toNumber());
+      console.log(gc_fee_bn.toJSON());
       const technician_profile = await program.rpc.initTechnicianProfile('Vamshi','Male','05/03/1995',60,gc_fee_bn,true,time,{
         accounts: {
           technicianProfile: newTechnicianPda,
@@ -207,6 +215,20 @@ function App() {
     catch {
 
     }
+  }
+
+  async function onChange(e) {
+    const file = e.target.files[0]
+    try {
+      const added = await client.add(file)
+      const url = `https://ipfs.infura.io/ipfs/${added.path}`;
+      setValue({
+        fileUrl: url
+      });
+      console.log(url);
+    } catch (error) {
+      console.log('Error uploading file: ', error)
+    }  
   }
 
   async function createBloodTestBooking() {
@@ -422,6 +444,8 @@ function App() {
           <button onClick={createBloodTestBooking}>Create Blood test Booking</button>
           <button onClick={createGeneralConsultancy}>Create General Consultancy</button>
           <button onClick={getAllAccounts}>Get all accounts</button>
+          <input type="file" onChange={onChange}/>
+          {value.fileUrl && (<img src={value.fileUrl} width="600px"/>)}
         </div>
       </div>
       );
